@@ -68,16 +68,16 @@ proc_principal: BEGIN
 END$$
 
 DELIMITER ;
---exemplos:
+-- exemplos:
 
--- 1. Acréscimo de 10% na categoria 1
+-- 1. acréscimo de 10% na categoria 1
 CALL sp_reajustar_precos_por_categoria(1, 10.00, @qtd, @msg);
 SELECT @qtd AS total_alterado, @msg AS mensagem_retorno;
 
--- 2. Redução de 20% na categoria 3
+-- 2. redução de 20% na categoria 3
 CALL sp_reajustar_precos_por_categoria(3, -20.00, @qtd, @msg);
 SELECT @qtd AS total_alterado, @msg AS mensagem_retorno;
 
--- 3. Tentativa de desconto inválido (-60%)
+-- 3. tentativa de desconto inválido (-60%)
 CALL sp_reajustar_precos_por_categoria(1, -60.00, @qtd, @msg);
 SELECT @qtd AS total_alterado, @msg AS mensagem_retorno;
