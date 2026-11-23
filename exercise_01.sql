@@ -13,29 +13,24 @@ proc_principal: BEGIN
     DECLARE v_fator_calculo DECIMAL(10,4);
     DECLARE v_categoria_valida BOOLEAN DEFAULT FALSE;
 
-    -- Valores padrão de retorno
     SET p_total_afetados = 0;
     SET p_status_msg = '';
 
-    -- Checagem de preenchimento obrigatório
     IF p_categoria_id IS NULL OR p_taxa_ajuste IS NULL THEN
         SET p_status_msg = 'Falha: Os parâmetros de categoria e percentual são obrigatórios.';
         LEAVE proc_principal;
     END IF;
 
-    -- Checagem da faixa permitida (-50% até +100%)
     IF p_taxa_ajuste NOT BETWEEN -50.00 AND 100.00 THEN
         SET p_status_msg = 'Falha: O percentual deve estar entre -50% (desconto) e 100% (acréscimo).';
         LEAVE proc_principal;
     END IF;
 
-    -- Verifica se o ajuste é neutro
     IF p_taxa_ajuste = 0 THEN
         SET p_status_msg = 'Aviso: Percentual zerado. Nenhuma alteração foi aplicada.';
         LEAVE proc_principal;
     END IF;
 
-    -- Valida existência da categoria usando EXISTS
     SELECT EXISTS(
         SELECT 1 
         FROM categorias 
@@ -47,10 +42,8 @@ proc_principal: BEGIN
         LEAVE proc_principal;
     END IF;
 
-    -- Calcula o multiplicador (ex: +10% vira 1.10 | -20% vira 0.80)
     SET v_fator_calculo = 1 + (p_taxa_ajuste / 100);
 
-    -- Aplica o novo valor aos itens ativos
     UPDATE produtos
     SET preco = ROUND(preco * v_fator_calculo, 2)
     WHERE id_categoria = p_categoria_id
@@ -58,7 +51,6 @@ proc_principal: BEGIN
 
     SET p_total_afetados = ROW_COUNT();
 
-    -- Define mensagem final com CASE
     SET p_status_msg = CASE 
         WHEN p_total_afetados > 0 THEN 
             CONCAT('Concluído: ', p_total_afetados, ' item(ns) reajustado(s) em ', p_taxa_ajuste, '%.')
@@ -66,7 +58,6 @@ proc_principal: BEGIN
             'Aviso: A categoria não possui produtos ativos para reajuste.'
     END;
 
-    -- Grava auditoria na tabela de logs
     INSERT INTO log_operacoes (tabela_afetada, operacao, descricao)
     VALUES (
         'produtos',
@@ -77,10 +68,7 @@ proc_principal: BEGIN
 END$$
 
 DELIMITER ;
-
--- ==========================================
--- EXECUÇÃO DOS TESTES
--- ==========================================
+--exemplos:
 
 -- 1. Acréscimo de 10% na categoria 1
 CALL sp_reajustar_precos_por_categoria(1, 10.00, @qtd, @msg);
