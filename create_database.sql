@@ -1,9 +1,11 @@
+--criação da database
 CREATE DATABASE loja_tech
 CHARACTER SET utf8mb4
 COLLATE utf8mb4_0900_ai_ci;
 
 USE loja_tech;
 
+--criações de tabelas
 CREATE TABLE categorias (
     id_categoria INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(100) NOT NULL,
