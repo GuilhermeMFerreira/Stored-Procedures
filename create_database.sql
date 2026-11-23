@@ -1,13 +1,8 @@
-
--- BANCO DE DADOS: loja_tech
-
 CREATE DATABASE loja_tech
 CHARACTER SET utf8mb4
 COLLATE utf8mb4_0900_ai_ci;
 
 USE loja_tech;
-
--- TABELA: categorias
 
 CREATE TABLE categorias (
     id_categoria INT AUTO_INCREMENT PRIMARY KEY,
@@ -16,9 +11,6 @@ CREATE TABLE categorias (
     ativo BOOLEAN DEFAULT TRUE,
     criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
 );
-
-
--- TABELA: produtos
 
 CREATE TABLE produtos (
     id_produto INT AUTO_INCREMENT PRIMARY KEY,
@@ -36,9 +28,6 @@ CREATE TABLE produtos (
     FOREIGN KEY (id_categoria) REFERENCES categorias(id_categoria)
 );
 
-
--- TABELA: clientes
-
 CREATE TABLE clientes (
     id_cliente INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(150) NOT NULL,
@@ -50,8 +39,6 @@ CREATE TABLE clientes (
     criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-
--- TABELA: pedidos
 
 CREATE TABLE pedidos (
     id_pedido INT AUTO_INCREMENT PRIMARY KEY,
@@ -74,8 +61,6 @@ CREATE TABLE pedidos (
 );
 
 
--- TABELA: itens_pedido
-
 CREATE TABLE itens_pedido (
     id_item INT AUTO_INCREMENT PRIMARY KEY,
     id_pedido INT NOT NULL,
@@ -92,8 +77,6 @@ CREATE TABLE itens_pedido (
 );
 
 
--- TABELA: log_operacoes
-
 CREATE TABLE log_operacoes (
     id_log INT AUTO_INCREMENT PRIMARY KEY,
     tabela_afetada VARCHAR(100),
@@ -103,21 +86,12 @@ CREATE TABLE log_operacoes (
     data_operacao DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
-
--- INSERÇÃO DOS DADOS INICIAIS
-
-
--- CATEGORIAS
-
 INSERT INTO categorias (nome, descricao) VALUES
 ('Notebooks', 'Notebooks e laptops'),
 ('Smartphones', 'Celulares e smartphones'),
 ('Periféricos', 'Teclados, mouses, headsets'),
 ('Monitores', 'Monitores e telas'),
 ('Armazenamento', 'HDs, SSDs e pen drives');
-
-
--- PRODUTOS
 
 INSERT INTO produtos (
     id_categoria,
@@ -139,8 +113,6 @@ INSERT INTO produtos (
 (5, 'HD Externo Seagate 1TB', 329.90, 35, 8);
 
 
--- CLIENTES
-
 INSERT INTO clientes (
     nome,
     email,
@@ -155,8 +127,6 @@ INSERT INTO clientes (
 ('Elena Ferreira', 'elena.ferreira@email.com', '56789012345', '41943210987', '1998-06-12');
 
 
--- PEDIDOS
-
 INSERT INTO pedidos (
     id_cliente,
     status,
@@ -167,9 +137,6 @@ INSERT INTO pedidos (
 (3, 'pendente', 1099.70),
 (1, 'processando', 6499.00),
 (4, 'cancelado', 249.90);
-
-
--- ITENS DOS PEDIDOS
 
 INSERT INTO itens_pedido (
     id_pedido,
