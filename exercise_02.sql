@@ -9,7 +9,6 @@ bloco_extrato: BEGIN
 
     DECLARE v_cliente_cadastrado BOOLEAN DEFAULT FALSE;
 
-    -- Valida se o parâmetro foi enviado e se o registro existe
     IF p_cliente_id IS NOT NULL THEN
         SELECT EXISTS(
             SELECT 1 
@@ -18,13 +17,11 @@ bloco_extrato: BEGIN
         ) INTO v_cliente_cadastrado;
     END IF;
 
-    -- Saída antecipada caso o cliente não seja localizado
     IF NOT v_cliente_cadastrado THEN
         SELECT 'Falha: Nenhum cliente localizado com o ID informado.' AS aviso;
         LEAVE bloco_extrato;
     END IF;
 
-    -- 1º Retorno: Informações cadastrais
     SELECT
         nome AS cliente_nome,
         email AS cliente_email,
@@ -33,7 +30,6 @@ bloco_extrato: BEGIN
     FROM clientes
     WHERE id_cliente = p_cliente_id;
 
-    -- 2º Retorno: Lista cronológica de compras
     SELECT
         id_pedido AS cod_pedido,
         data_pedido AS data_compra,
@@ -43,7 +39,6 @@ bloco_extrato: BEGIN
     WHERE id_cliente = p_cliente_id
     ORDER BY data_pedido DESC, id_pedido DESC;
 
-    -- 3º Retorno: Indicadores consolidados
     SELECT
         COUNT(id_pedido) AS qtd_compras,
         COALESCE(SUM(valor_total), 0.00) AS montante_gasto,
@@ -55,13 +50,10 @@ bloco_extrato: BEGIN
 END$$
 
 DELIMITER ;
+--exercicio 02
 
--- ==========================================
--- EXECUÇÃO DOS TESTES
--- ==========================================
-
--- Consulta para cliente válido
+-- consulta para cliente válido
 CALL sp_obter_historico_cliente(1);
 
--- Consulta para cliente inexistente
+-- consulta para cliente inexistente
 CALL sp_obter_historico_cliente(150);
