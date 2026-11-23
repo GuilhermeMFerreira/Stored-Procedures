@@ -50,7 +50,7 @@ bloco_extrato: BEGIN
 END$$
 
 DELIMITER ;
---exercicio 02
+-- exercicio 02
 
 -- consulta para cliente válido
 CALL sp_obter_historico_cliente(1);
