@@ -85,18 +85,35 @@ O procedimento também verifica a existência do cliente, apresentando uma mensa
 
 4. Depois de executar os arquivos, utilize os comandos `CALL` para testar os procedimentos armazenados.
 
-**Exemplos de execução:**
+## Exemplos:
 
-```sql
--- Atividade 1
-CALL atualizar_preco_categoria(1, 10, @quantidade, @mensagem);
+### Exercício 1
 
-SELECT @quantidade AS produtos_alterados,
-       @mensagem AS resultado;
+1. Acréscimo de 10% na categoria 1
 
--- Atividade 2
-CALL consultar_extrato_cliente(1);
-```
+<img width="369" height="84" alt="image" src="https://github.com/user-attachments/assets/daff3192-4afe-4550-a046-934bd25537ef" />
+
+2. Redução de 20% na categoria 3
+
+<img width="382" height="86" alt="image" src="https://github.com/user-attachments/assets/c2d52066-c53b-48ae-8bd3-0f4e98b673e8" />
+
+3. Tentativa de desconto inválido (-60%)
+
+<img width="373" height="89" alt="image" src="https://github.com/user-attachments/assets/c42d723f-ce0f-49f3-9978-6d7c4059cf7a" />
+
+### Exercício 2
+
+1. Consulta para cliente válido
+
+<img width="451" height="92" alt="image" src="https://github.com/user-attachments/assets/3cf11278-c627-45da-a74b-e6550a0b8469" />
+
+<img width="394" height="98" alt="image" src="https://github.com/user-attachments/assets/4d05482d-5360-42f4-9415-21c2da411528" />
+
+<img width="462" height="84" alt="image" src="https://github.com/user-attachments/assets/6c38b625-af82-4156-9cda-71af5991194b" />
+
+2. Consulta para cliente inexistente
+
+<img width="351" height="90" alt="image" src="https://github.com/user-attachments/assets/d5bc11cd-08d3-40e4-a50f-23d167427df3" />
 
 ---
 
