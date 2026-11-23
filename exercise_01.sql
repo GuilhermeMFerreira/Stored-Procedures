@@ -1,127 +1,95 @@
-DELIMITER //
+DELIMITER $$
 
-CREATE PROCEDURE atualizar_preco_categoria(
-    IN p_id_categoria INT,
-    IN p_percentual DECIMAL(5,2),
-    OUT p_quantidade_alterada INT,
-    OUT p_mensagem VARCHAR(255)
+DROP PROCEDURE IF EXISTS sp_reajustar_precos_por_categoria$$
+
+CREATE PROCEDURE sp_reajustar_precos_por_categoria(
+    IN p_categoria_id INT,
+    IN p_taxa_ajuste DECIMAL(5,2),
+    OUT p_total_afetados INT,
+    OUT p_status_msg VARCHAR(255)
 )
+proc_principal: BEGIN
 
-BEGIN
+    DECLARE v_fator_calculo DECIMAL(10,4);
+    DECLARE v_categoria_valida BOOLEAN DEFAULT FALSE;
 
-    -- Variáveis locais
-    DECLARE v_categoria_existe INT DEFAULT 0;
+    -- Valores padrão de retorno
+    SET p_total_afetados = 0;
+    SET p_status_msg = '';
 
-    -- Inicializa os parâmetros de saída
-    SET p_quantidade_alterada = 0;
-    SET p_mensagem = '';
-
-    -- Valida os parâmetros recebidos
-    IF p_id_categoria IS NULL OR p_percentual IS NULL THEN
-
-        SET p_mensagem = 'ERRO: Informe a categoria e o percentual.';
-
-    -- Valida o limite de desconto
-    ELSEIF p_percentual < -50 THEN
-
-        SET p_mensagem = 'ERRO: O desconto máximo permitido é de 50%.';
-
-    -- 3. Valida o limite de aumento
-    ELSEIF p_percentual > 100 THEN
-
-        SET p_mensagem = 'ERRO: O aumento máximo permitido é de 100%.';
-
-    ELSE
-
-        -- Verifica se a categoria existe
-        SELECT COUNT(*)
-        INTO v_categoria_existe
-        FROM categorias
-        WHERE id_categoria = p_id_categoria;
-
-        IF v_categoria_existe = 0 THEN
-
-            SET p_mensagem = 'ERRO: Categoria não encontrada.';
-
-        -- 5. Trata percentual igual a zero
-        ELSEIF p_percentual = 0 THEN
-
-            SET p_mensagem = 'Nenhum ajuste realizado: percentual igual a zero.';
-
-        ELSE
-
-            -- Atualiza os preços dos produtos ativos
-            UPDATE produtos
-            SET preco = ROUND(
-                preco + (preco * p_percentual / 100),
-                2
-            )
-            WHERE id_categoria = p_id_categoria
-            AND ativo = TRUE;
-
-            -- Captura a quantidade de produtos alterados
-            SET p_quantidade_alterada = ROW_COUNT();
-
-            -- Define a mensagem de retorno
-            IF p_quantidade_alterada > 0 THEN
-
-                SET p_mensagem = CONCAT(
-                    'Sucesso! ',
-                    p_quantidade_alterada,
-                    ' produto(s) tiveram seus preços ajustados em ',
-                    p_percentual,
-                    '%.'
-                );
-
-            ELSE
-
-                SET p_mensagem = 'Nenhum produto ativo encontrado para atualização.';
-
-            END IF;
-
-            -- Registra a operação no log
-            INSERT INTO log_operacoes (
-                tabela_afetada,
-                operacao,
-                descricao
-            )
-            VALUES (
-                'produtos',
-                'UPDATE',
-                CONCAT(
-                    'Categoria: ',
-                    p_id_categoria,
-                    ' | Percentual: ',
-                    p_percentual,
-                    '% | Produtos alterados: ',
-                    p_quantidade_alterada
-                )
-            );
-
-        END IF;
-
+    -- Checagem de preenchimento obrigatório
+    IF p_categoria_id IS NULL OR p_taxa_ajuste IS NULL THEN
+        SET p_status_msg = 'Falha: Os parâmetros de categoria e percentual são obrigatórios.';
+        LEAVE proc_principal;
     END IF;
 
-END //
+    -- Checagem da faixa permitida (-50% até +100%)
+    IF p_taxa_ajuste NOT BETWEEN -50.00 AND 100.00 THEN
+        SET p_status_msg = 'Falha: O percentual deve estar entre -50% (desconto) e 100% (acréscimo).';
+        LEAVE proc_principal;
+    END IF;
+
+    -- Verifica se o ajuste é neutro
+    IF p_taxa_ajuste = 0 THEN
+        SET p_status_msg = 'Aviso: Percentual zerado. Nenhuma alteração foi aplicada.';
+        LEAVE proc_principal;
+    END IF;
+
+    -- Valida existência da categoria usando EXISTS
+    SELECT EXISTS(
+        SELECT 1 
+        FROM categorias 
+        WHERE id_categoria = p_categoria_id
+    ) INTO v_categoria_valida;
+
+    IF NOT v_categoria_valida THEN
+        SET p_status_msg = 'Falha: A categoria informada não existe no cadastro.';
+        LEAVE proc_principal;
+    END IF;
+
+    -- Calcula o multiplicador (ex: +10% vira 1.10 | -20% vira 0.80)
+    SET v_fator_calculo = 1 + (p_taxa_ajuste / 100);
+
+    -- Aplica o novo valor aos itens ativos
+    UPDATE produtos
+    SET preco = ROUND(preco * v_fator_calculo, 2)
+    WHERE id_categoria = p_categoria_id
+      AND ativo = 1;
+
+    SET p_total_afetados = ROW_COUNT();
+
+    -- Define mensagem final com CASE
+    SET p_status_msg = CASE 
+        WHEN p_total_afetados > 0 THEN 
+            CONCAT('Concluído: ', p_total_afetados, ' item(ns) reajustado(s) em ', p_taxa_ajuste, '%.')
+        ELSE 
+            'Aviso: A categoria não possui produtos ativos para reajuste.'
+    END;
+
+    -- Grava auditoria na tabela de logs
+    INSERT INTO log_operacoes (tabela_afetada, operacao, descricao)
+    VALUES (
+        'produtos',
+        'UPDATE',
+        CONCAT('ID Categoria: ', p_categoria_id, ' | Taxa: ', p_taxa_ajuste, '% | Afetados: ', p_total_afetados)
+    );
+
+END$$
 
 DELIMITER ;
 
--- TESTES 
+-- ==========================================
+-- EXECUÇÃO DOS TESTES
+-- ==========================================
 
--- Aumento de 10% na categoria Notebooks
-CALL atualizar_preco_categoria(1, 10, @quantidade, @mensagem);
+-- 1. Acréscimo de 10% na categoria 1
+CALL sp_reajustar_precos_por_categoria(1, 10.00, @qtd, @msg);
+SELECT @qtd AS total_alterado, @msg AS mensagem_retorno;
 
-SELECT @quantidade AS produtos_alterados,
-       @mensagem AS resultado;
-       
--- Desconto de 20% na categoria Periféricos
-CALL atualizar_preco_categoria(3, -20, @quantidade, @mensagem);
+-- 2. Redução de 20% na categoria 3
+CALL sp_reajustar_precos_por_categoria(3, -20.00, @qtd, @msg);
+SELECT @qtd AS total_alterado, @msg AS mensagem_retorno;
 
-SELECT @quantidade AS produtos_alterados,
-       @mensagem AS resultado;
-       
--- Testar desconto acima do permitido
-CALL atualizar_preco_categoria(1, -60, @quantidade, @mensagem);
-
-SELECT @quantidade AS produtos_alterados,
-       @mensagem AS resultado;
+-- 3. Tentativa de desconto inválido (-60%)
+CALL sp_reajustar_precos_por_categoria(1, -60.00, @qtd, @msg);
+SELECT @qtd AS total_alterado, @msg AS mensagem_retorno;
